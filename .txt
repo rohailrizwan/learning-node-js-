@@ -1,0 +1,28 @@
+ // installation
+nodemon 
+mongoose
+express js
+prettier (for formatting)
+dotenv
+cors
+cookieparser
+multer (for image)
+cloudinary (for save image lifetime )
+jwt (token)
+bcrypt (password hash)
+
+Project setup
+.env
+src folder
+    Models (for define schema)
+    controllers (for define function)
+    middleware (for authentication or protection)
+    routes (endpoint)
+    db (for database)
+    utils (for useable function)
+    constant.js (for constant variable)
+    app.js (connect your routes and express js)
+    index.js (connect db )
+
+prettierignore (for gitignore file)
+.prettierrc (for define format)
