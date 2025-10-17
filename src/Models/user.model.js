@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String, // cliudinary url
-      required: true,
+      required: false,
     },
     coverimage: {
       type: String, // cliudinary url
@@ -38,20 +38,20 @@ const userSchema = new mongoose.Schema(
   { timestamps: true },
 );
 // for becrypt password before save
-userSchema.pre(("save"),async(next)=>{
-    if(this.isModified("password")){
-        this.password = bcrypt.hash(this.password,10)
-        next()
-    }
-    next()
-})
+userSchema.pre("save", async function (next) {
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
+
 
 // for checking password correct
 userSchema.methods.isPasswordcorrect = async function(password){
     return await bcrypt.compare(password,this.password)
 }
 userSchema.methods.generateAccesstoken=function (){
-    jwt.sign({
+   return jwt.sign({
         _id : this._id,
         email:this.email,
         username:this.username,
@@ -61,5 +61,14 @@ userSchema.methods.generateAccesstoken=function (){
     }
 )
 }
-userSchema.methods.generateRefreshtoken=function (){}
+userSchema.methods.generateRefreshtoken = function () {
+  return jwt.sign(
+    { _id: this._id },
+    process.env.ACCESS_TOKEN_REFRESH,
+    {
+      expiresIn: process.env.ACCESS_REFRESH_EXPIRY,
+    }
+  );
+};
+
 export const user = mongoose.model('user', userSchema);

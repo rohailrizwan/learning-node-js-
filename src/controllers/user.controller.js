@@ -1,39 +1,87 @@
-import ApiError from "../utils/apierror.js";
-import { asyncHandler } from "../utils/asynchandler.js";
+import { user } from '../Models/user.model.js';
+import ApiError from '../utils/apierror.js';
+import Apiresponse from '../utils/apiresponse.js';
+import { asyncHandler } from '../utils/asynchandler.js';
+import { validEmail, validPassword } from '../utils/function.js';
 
 const registerUser = asyncHandler(async (req, res) => {
-    // step get data from frontend
-    const { username, email, password } = req.body
+  // 🧾 1. Data frontend se get karo
+  const { username, email, password,avatar } = req.body;
 
-    // validation
+  // ✅ 2. Required fields validation
+  const requiredFields = [
+    { key: 'username', label: 'Username' },
+    { key: 'email', label: 'Email' },
+    { key: 'password', label: 'Password' },
+  ];
 
-    const requiredFields = [
-        { key: "username", label: "Username" },
-        { key: "email", label: "Email" },
-        { key: "password", label: "Password" },
-    ];
-    const ifempty = requiredFields.filter(({ key }) => req.body[key].trim() == "" || !req.body[key]).map(({ key, label }) => (
+  const ifempty = requiredFields
+    .filter(({ key }) => !req.body[key] || req.body[key].trim() === '')
+    .map(({ key, label }) => ({
+      field: key,
+      message: `${label} is required`,
+    }));
+
+  if (ifempty?.length > 0) {
+    throw new ApiError('Fields are missing', 400, ifempty);
+  }
+
+  // 📧 3. Email validation
+  if (!validEmail(email)) {
+    throw new ApiError('Email is invalid', 400);
+  }
+
+  // 🔐 4. Password validation
+  if (!validPassword(password)) {
+    throw new ApiError('Password length must be at least 8 characters', 400);
+  }
+
+  // 🧍 5. Check if user already exists
+  const isUserExist = await user.findOne({ email });
+  if (isUserExist) {
+    throw new ApiError('User already exists', 400);
+  }
+
+  // 🆕 6. Create new user in DB
+  const newUser = await user.create({
+    username,
+    email,
+    password,
+  });
+
+  // 🪙 7. Generate Access Token
+  const accessToken = newUser.generateAccesstoken();
+
+  // 🔁 8. (Optional) Generate Refresh Token — comment for now
+  // const refreshToken = newUser.generateRefreshToken();
+  // newUser.refreshToken = refreshToken;
+  // await newUser.save({ validateBeforeSave: false });
+
+  // 🚫 9. Remove sensitive fields from response
+  const { password: _,  ...userWithoutSensitive } = newUser.toObject();
+
+  // 🍪 10. (Optional) Cookie set karna agar chaho to — abhi skip kiya hai
+  // const options = {
+  //   httpOnly: true,
+  //   secure: process.env.NODE_ENV === 'production',
+  //   sameSite: 'strict',
+  // };
+
+  // 11. ✅ Final Response (Access Token ke sath)
+  return res
+    .status(201)
+    // .cookie('accessToken', accessToken, options)  // optional
+    .json(
+      new Apiresponse(
+        201,
+        'User registered successfully',
         {
-            field: key,
-            message: `${label} is req`
+          user: userWithoutSensitive,
+          accessToken,
+          // refreshToken, // optional (commented)
         }
-    ))
-
-    if (ifempty?.length > 0) {
-        throw new ApiError("Fields are missing", 400,ifempty)
-
-    }
-    // return res.status(400).json({
-    //     success: false,
-    //     message: "All fields are req",
-    // });
-
-    // check user existence
-    // check for imaages
-    // create user obj or entry in db
-    // remove password and refresh token field
-    // check user creation response
-
+      )
+    );
 });
 
 export { registerUser };
