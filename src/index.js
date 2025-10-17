@@ -1,16 +1,20 @@
-import dotenv from 'dotenv'; // initialize for reload all variable
+// index.js
+import dotenv from 'dotenv';
 import connectDB from './db/index.js';
+import { app } from './app.js'; // ✅ named import
 
-dotenv.config({ path: './.env' }); // config for load all variable
+dotenv.config({ path: './.env' });
 
-connectDB().then(()=>{
-    app.listen(process.env.Port,()=>{
-        console.log(`Server is running on port ${process.env.Port}`);
-    })
-}).catch((error)=>{
-    console.log(error);
-    
-})
+connectDB()
+  .then(() => {
+    app.listen(process.env.PORT, () => {
+      console.log(`✅ Server is running on port ${process.env.PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.log('❌ Database connection failed:', error);
+  });
+
 
 
 
