@@ -6,5 +6,13 @@ const validEmail = (email) => {
 const validPassword = (password) => {
   return password?.length >=8 ; // true if valid, false if not
 }
+function isValidURL(url) {
+  try {
+    new URL(url);
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
 
-export {validEmail,validPassword}
+export {validEmail,validPassword,isValidURL}
