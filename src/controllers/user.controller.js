@@ -160,6 +160,8 @@ const loginUser = asyncHandler(async (req, res) => {
   );
 });
 
+// logout user
+
 const logoutUser = asyncHandler(async (req, res) => {
   await user.findByIdAndUpdate(
     req.user?._id,
@@ -178,7 +180,33 @@ const logoutUser = asyncHandler(async (req, res) => {
   return res.status(200).json(new Apiresponse(200, "User logout successfully"))
 })
 
-export { registerUser, loginUser, logoutUser };
+// change password
+
+const changePassword = asyncHandler(async (req,res)=>{
+  const {oldpassword,newpassword,confirm_password} = req.body;
+
+  if(!(newpassword == confirm_password)){
+      throw new ApiError("Password not match",404)
+  }
+
+  const finduser= await user.findById(req.user._id)
+  const isPasswordcorrect = await finduser.isPasswordcorrect(oldpassword)
+
+  if(!isPasswordcorrect){
+    throw new ApiError("wrong password",400)
+  }
+  finduser.password = newpassword
+
+  await finduser.save({validateBeforeSave:false})
+
+  return res.status(200).json(new Apiresponse(200,"password updated successfully"))
+
+
+})
+
+
+
+export { registerUser, loginUser, logoutUser,changePassword };
 
 
 //const user = await user.findOne({
