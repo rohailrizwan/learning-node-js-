@@ -7,17 +7,17 @@ import { isValidURL, validEmail, validPassword } from '../utils/function.js';
 const generateAccessandrefreshtoken = async (userid) => {
   try {
     const userbyid = await user.findById(userid)
-    if(userbyid){
+    if (userbyid) {
       const accessToken = userbyid.generateAccesstoken()
       const refreshToken = userbyid.generateRefreshtoken()
-  
+
       userbyid.refreshToken = refreshToken
       await userbyid.save({ validateBeforeSave: false })
-  
+
       return { accessToken, refreshToken }
     }
   } catch (error) {
-    throw new ApiError("something went wrong",500)
+    throw new ApiError("something went wrong", 500)
   }
 }
 
@@ -115,22 +115,22 @@ const loginUser = asyncHandler(async (req, res) => {
 
   //  1. Basic validation
   if (!email?.trim()) {
-    throw new ApiError('Email is required',400);
+    throw new ApiError('Email is required', 400);
   }
   if (!password?.trim()) {
-    throw new ApiError(400, 'Password is required',400);
+    throw new ApiError(400, 'Password is required', 400);
   }
 
   //  2. Check if user exists
   const existingUser = await user.findOne({ email });
   if (!existingUser) {
-    throw new ApiError('User does not exist',404);
+    throw new ApiError('User does not exist', 404);
   }
 
   //  3. Validate password
   const isValidPassword = await existingUser.isPasswordcorrect(password);
   if (!isValidPassword) {
-    throw new ApiError('Invalid password',401);
+    throw new ApiError('Invalid password', 401);
   }
 
   //  4. Generate access and refresh token
@@ -160,9 +160,53 @@ const loginUser = asyncHandler(async (req, res) => {
   );
 });
 
+// logout user
+
+const logoutUser = asyncHandler(async (req, res) => {
+  await user.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $unset: { refreshToken: 1 }, // removes the field completely
+    },
+    { new: true }
+  );
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  };
+
+  // return res.status(200).clearCookie("accessToken",cookieOptions).clearCookie("refreshToken",cookieOptions).json(new Apiresponse(200,"User logout successfully"))
+  return res.status(200).json(new Apiresponse(200, "User logout successfully"))
+})
+
+// change password
+
+const changePassword = asyncHandler(async (req,res)=>{
+  const {oldpassword,newpassword,confirm_password} = req.body;
+
+  if(!(newpassword == confirm_password)){
+      throw new ApiError("Password not match",404)
+  }
+
+  const finduser= await user.findById(req.user._id)
+  const isPasswordcorrect = await finduser.isPasswordcorrect(oldpassword)
+
+  if(!isPasswordcorrect){
+    throw new ApiError("wrong password",400)
+  }
+  finduser.password = newpassword
+
+  await finduser.save({validateBeforeSave:false})
+
+  return res.status(200).json(new Apiresponse(200,"password updated successfully"))
 
 
-export { registerUser,loginUser };
+})
+
+
+
+export { registerUser, loginUser, logoutUser,changePassword };
 
 
 //const user = await user.findOne({
