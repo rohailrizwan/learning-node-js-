@@ -18,9 +18,12 @@ app.use('/uploads',express.static('public/uploads'))
 import userRouter from './routes/user.router.js'
 import  {errorMiddleware}  from "./middleware/error.middleware.js";
 import uploadRouter from "./routes/upload.router.js";
-
+import todoRouter from './routes/todo.router.js'
+import contactRouter from './routes/contact.router.js'
 app.use("/users",userRouter)
 app.use('/uploads',uploadRouter)
+app.use('/todo',todoRouter)
+app.use("/",contactRouter)
 
 // ✅ Global error handler — last me rakho
 app.use(errorMiddleware);
