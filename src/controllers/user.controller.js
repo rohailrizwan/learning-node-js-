@@ -1,4 +1,5 @@
-import { user } from '../Models/user.model.js';
+
+import { User } from '../models/user.model.js';
 import ApiError from '../utils/apierror.js';
 import Apiresponse from '../utils/apiresponse.js';
 import { asyncHandler } from '../utils/asynchandler.js';
@@ -6,7 +7,7 @@ import { isValidURL, validEmail, validPassword } from '../utils/function.js';
 
 const generateAccessandrefreshtoken = async (userid) => {
   try {
-    const userbyid = await user.findById(userid)
+    const userbyid = await User.findById(userid)
     if (userbyid) {
       const accessToken = userbyid.generateAccesstoken()
       const refreshToken = userbyid.generateRefreshtoken()
@@ -23,14 +24,15 @@ const generateAccessandrefreshtoken = async (userid) => {
 
 const registerUser = asyncHandler(async (req, res) => {
   // 🧾 1. Data frontend se get karo
-  const { username, email, password, avatar } = req.body;
-
+  const { username, email, password, avatar,lname,role } = req.body;
+  console.log(username, email, password, avatar,lname,role);
   // ✅ 2. Required fields validation
   const requiredFields = [
     { key: 'username', label: 'Username' },
     { key: 'email', label: 'Email' },
     { key: 'password', label: 'Password' },
     { key: 'avatar', label: 'Image' },
+    { key: 'role', label: 'Role' },
   ];
 
   const ifempty = requiredFields
@@ -55,22 +57,27 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   if (!isValidURL(avatar)) {
-    throw new ApiError('Invalid Url', 500);
+    throw new ApiError('Invalid image url', 500);
   }
 
   // 🧍 5. Check if user already exists
-  const isUserExist = await user.findOne({ email });
+  const isUserExist = await User.findOne({ email });
   if (isUserExist) {
     throw new ApiError('User already exists', 400);
   }
 
   // 🆕 6. Create new user in DB
-  const newUser = await user.create({
+  const newUser = await User.create({
     username,
+    lname,
     email,
     password,
-    avatar
+    avatar,
+    role
   });
+
+  console.log(newUser);
+  
 
   // 🪙 7. Generate Access Token
   const accessToken = newUser.generateAccesstoken();
@@ -122,7 +129,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   //  2. Check if user exists
-  const existingUser = await user.findOne({ email });
+  const existingUser = await User.findOne({ email });
   if (!existingUser) {
     throw new ApiError('User does not exist', 404);
   }
@@ -137,7 +144,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const { accessToken, refreshToken } = await generateAccessandrefreshtoken(existingUser._id);
 
   //  5. Remove sensitive fields
-  const safeUser = await user.findById(existingUser._id).select('-password -refreshToken');
+  const safeUser = await User.findById(existingUser._id).select('-password -refreshToken');
 
   // 🍪 6. (Optional) Set cookies — better UX for web apps
   // const cookieOptions = {
@@ -163,7 +170,7 @@ const loginUser = asyncHandler(async (req, res) => {
 // logout user
 
 const logoutUser = asyncHandler(async (req, res) => {
-  await user.findByIdAndUpdate(
+  await User.findByIdAndUpdate(
     req.user?._id,
     {
       $unset: { refreshToken: 1 }, // removes the field completely
@@ -189,7 +196,7 @@ const changePassword = asyncHandler(async (req,res)=>{
       throw new ApiError("Password not match",404)
   }
 
-  const finduser= await user.findById(req.user._id)
+  const finduser= await User.findById(req.user._id)
   const isPasswordcorrect = await finduser.isPasswordcorrect(oldpassword)
 
   if(!isPasswordcorrect){

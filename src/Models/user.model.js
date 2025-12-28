@@ -1,11 +1,17 @@
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs';
+
 const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
       required: true,
+      //   index:true // for searching
+    },
+    lname: {
+      type: String,
+      required:false
       //   index:true // for searching
     },
     email: {
@@ -21,18 +27,13 @@ const userSchema = new mongoose.Schema(
       type: String, // cliudinary url
       required: false,
     },
-    coverimage: {
-      type: String, // cliudinary url
-      required: false,
-    },
-    watchhistory: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'video',
-      },
-    ],
     refreshToken: {
       type: String,
+    },
+    role: {
+      type: String,
+      enum: ['admin', 'user'],
+      default: 'user',
     },
   },
   { timestamps: true },
@@ -71,4 +72,4 @@ userSchema.methods.generateRefreshtoken = function () {
   );
 };
 
-export const user = mongoose.model('user', userSchema);
+export const User = mongoose.model('users', userSchema);

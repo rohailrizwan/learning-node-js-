@@ -1,4 +1,5 @@
-import { user } from "../Models/user.model.js";
+
+import { User } from "../models/user.model.js";
 import ApiError from "../utils/apierror.js";
 import { asyncHandler } from "../utils/asynchandler.js";
 import jwt from "jsonwebtoken";
@@ -23,7 +24,7 @@ const verifyJwt = asyncHandler(async (req, res, next) => {
     }
 
     // 3️⃣ Find user in DB
-    const findUser = await user
+    const findUser = await User
       .findById(decodeToken?._id)
       .select("-password -refreshToken");
 

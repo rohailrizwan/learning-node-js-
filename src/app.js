@@ -20,7 +20,9 @@ import  {errorMiddleware}  from "./middleware/error.middleware.js";
 import uploadRouter from "./routes/upload.router.js";
 import todoRouter from './routes/todo.router.js'
 import contactRouter from './routes/contact.router.js'
+import productRouter from './routes/product.router.js'
 app.use("/users",userRouter)
+app.use("/product",productRouter)
 app.use('/uploads',uploadRouter)
 app.use('/todo',todoRouter)
 app.use("/",contactRouter)
