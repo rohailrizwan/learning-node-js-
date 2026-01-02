@@ -1,17 +1,27 @@
 export const handleFileUpload = (req, res) => {
   try {
-    const file = req.file;
-    if (!file) {
+    
+    const singleFile = req.files?.image?.[0]; // single image
+    const multipleFiles = req.files?.cover_images || []; // array of images
+
+    if (!singleFile && multipleFiles.length === 0) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // URL build karo — /uploads folder ko static serve kiya hai app.js mein
-    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+    // URL build karo
+    const imageUrl = singleFile
+      ? `${req.protocol}://${req.get('host')}/uploads/${singleFile.filename}`
+      : null;
+
+    const cover_imagesUrls = multipleFiles.map(
+      (file) => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`
+    );
 
     res.status(200).json({
       success: true,
-      message: 'File uploaded successfully',
-      imageUrl,
+      message: 'File(s) uploaded successfully',
+      image: imageUrl,
+      images: cover_imagesUrls,
     });
   } catch (error) {
     console.error('Upload Error:', error);
