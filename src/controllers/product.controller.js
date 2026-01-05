@@ -114,6 +114,98 @@ const deleteProduct = asyncHandler(async (req, res) => {
     .json(new Apiresponse(200, 'Product deleted successfully'));
 });
 
-const updateProduct = asyncHandler(async (req, res) => {});
+const updateProduct = asyncHandler(async (req, res) => {
+  const {
+    product_name,
+    category,
+    gender,
+    rating,
+    price,
+    size,
+    notes,
+    image,
+    description,
+    // optional fields
+    isAvailable,
+    cover_images,
+    sillage,
+    longevity,
+    occasion,
+    season,
+    shareLinks,
+  } = req.body;
+
+  if (!req.user || !req.user._id || req?.user?.role !== 'admin') {
+    throw new ApiError('unAuthentcated', 401);
+  }
+  
+  const requiredFields = [
+    { key: 'product_name', label: 'Product Name', type: 'string' },
+    { key: 'category', label: 'Category', type: 'string' },
+    { key: 'gender', label: 'Gender', type: 'string' },
+    { key: 'rating', label: 'Rating', type: 'string' },
+    { key: 'price', label: 'Price', type: 'number' },
+    { key: 'size', label: 'Size', type: 'string' },
+    { key: 'image', label: 'Image', type: 'string' },
+    { key: 'description', label: 'Description', type: 'string' },
+  ];
+
+  const ifempty = requiredFields
+    .filter(({ key, type }) => {
+      const value = req.body[key];
+
+      if (value === undefined || value === null) return true;
+
+      if (type === 'string')
+        return typeof value !== 'string' || value.trim() === '';
+      if (type === 'number') return isNaN(value);
+      if (type === 'array') return !Array.isArray(value) || value.length === 0;
+
+      return false;
+    })
+    .map(({ key, label }) => ({
+      field: key,
+      message: `${label} is required`,
+    }));
+
+  if (ifempty?.length > 0) {
+    throw new ApiError('Fields are missing', 400, ifempty);
+  }
+
+  const getid = req.params.id;
+
+  const updateProduct = await Product.findByIdAndUpdate(
+    getid,
+    {
+      product_name,
+      category,
+      gender,
+      rating,
+      price,
+      size,
+      notes,
+      image,
+      description,
+      // optional fields
+      isAvailable,
+      cover_images,
+      sillage,
+      longevity,
+      occasion,
+      season,
+      shareLinks,
+    },
+    { new: true, runValidators: true },
+  );
+
+  if (!updateProduct) {
+    throw new ApiError('Not updated', 500);
+  }
+  if (updateProduct) {
+    return res
+      .status(200)
+      .json(new Apiresponse(200, 'Product updated successfully', getData));
+  }
+});
 
 export { addProduct, getProduct, deleteProduct, updateProduct };

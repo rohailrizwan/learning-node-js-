@@ -8,6 +8,6 @@ const router = Router()
 router.route("/add").post(verifyJwt,addProduct)
 router.route("/get").get(getProduct)
 router.route("/delete/:id").delete(verifyJwt,deleteProduct)
-router.route("/update").post(updateProduct)
+router.route("/update/:id").post(verifyJwt,updateProduct)
 
 export default router
