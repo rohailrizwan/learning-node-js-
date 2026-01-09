@@ -25,7 +25,7 @@ const addProduct = asyncHandler(async (req, res) => {
   } = req.body;
 
   if (!Array.isArray(notes) || notes.length === 0) {
-    throw ApiError('Notes must be a non-empty array', 401);
+    throw new ApiError('Notes must be a non-empty array', 401);
   }
 
   if (!req.user || !req.user._id || req?.user?.role !== 'admin') {
@@ -38,7 +38,7 @@ const addProduct = asyncHandler(async (req, res) => {
     { key: 'rating', label: 'Rating', type: 'string' },
     { key: 'price', label: 'Price', type: 'number' },
     { key: 'size', label: 'Size', type: 'string' },
-    { key: 'image', label: 'Image', type: 'string' },
+    // { key: 'image', label: 'Image', type: 'string' },
     { key: 'description', label: 'Description', type: 'string' },
   ];
 
@@ -112,6 +112,23 @@ const deleteProduct = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new Apiresponse(200, 'Product deleted successfully'));
+});
+const getProductByid = asyncHandler(async (req, res) => {
+  console.log(req?.user);
+  if (!req.user || !req.user._id || req?.user?.role !== 'admin') {
+    throw new ApiError('unAuthentcated', 401);
+  }
+  const getid = req.params.id;
+  console.log(getid);
+
+  const getData = await Product.findById(getid);
+
+  if (!getData) {
+    throw new ApiError('Product not found', 404);
+  }
+  return res
+    .status(200)
+    .json(new Apiresponse(200, 'Product fetch successfully'),getData);
 });
 
 const updateProduct = asyncHandler(async (req, res) => {
@@ -208,4 +225,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
 });
 
-export { addProduct, getProduct, deleteProduct, updateProduct };
+
+
+
+export { addProduct, getProduct, deleteProduct, updateProduct ,getProductByid};

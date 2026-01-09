@@ -21,7 +21,7 @@ export const handleFileUpload = (req, res) => {
       success: true,
       message: 'File(s) uploaded successfully',
       image: imageUrl,
-      images: cover_imagesUrls,
+      cover_images: cover_imagesUrls,
     });
   } catch (error) {
     console.error('Upload Error:', error);

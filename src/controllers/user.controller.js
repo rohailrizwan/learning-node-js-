@@ -25,14 +25,14 @@ const generateAccessandrefreshtoken = async (userid) => {
 const registerUser = asyncHandler(async (req, res) => {
   // 🧾 1. Data frontend se get karo
   const { username, email, password, avatar,lname,role } = req.body;
-  console.log(username, email, password, avatar,lname,role);
+  console.log(username, email, password, avatar,lname);
   // ✅ 2. Required fields validation
   const requiredFields = [
     { key: 'username', label: 'Username' },
     { key: 'email', label: 'Email' },
     { key: 'password', label: 'Password' },
     { key: 'avatar', label: 'Image' },
-    { key: 'role', label: 'Role' },
+    // { key: 'role', label: 'Role' },
   ];
 
   const ifempty = requiredFields
