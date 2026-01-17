@@ -9,6 +9,6 @@ router.route("/add").post(verifyJwt,addProduct)
 router.route("/get").get(getProduct)
 router.route("/getbyid/:id").get(getProductByid)
 router.route("/delete/:id").delete(verifyJwt,deleteProduct)
-router.route("/update/:id").post(verifyJwt,updateProduct)
+router.route("/update/:id").put(verifyJwt,updateProduct)
 
 export default router
