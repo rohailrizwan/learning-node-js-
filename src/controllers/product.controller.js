@@ -89,11 +89,27 @@ const addProduct = asyncHandler(async (req, res) => {
 });
 
 const getProduct = asyncHandler(async (req, res) => {
-  const getProduct = await Product.find();
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 2;
+  const skip = (page - 1) * limit;
+  const searchQuery = req.query.search ? {product_name:{$regex:req.query.search,$options:"i"}}:{}
+  console.log(searchQuery,"search");
+  
+  const getProduct = await Product.find(searchQuery).skip(skip).limit(limit);
+  const totalProducts = await Product.countDocuments()
+  const totalPages = Math.ceil(totalProducts / limit);
+  
   if (getProduct?.length == 0) {
     throw new ApiError('Product not found', 404, getProduct);
   }
-  return res.status(200).json(new Apiresponse(200, 'Product get', getProduct));
+  return res.status(200).json(
+    new Apiresponse(200, 'Product get', {
+      data: getProduct,
+      page: page,
+      limit: limit,
+      totalPages:totalPages
+    }),
+  );
 });
 
 const deleteProduct = asyncHandler(async (req, res) => {
@@ -128,7 +144,7 @@ const getProductByid = asyncHandler(async (req, res) => {
   }
   return res
     .status(200)
-    .json(new Apiresponse(200, 'Product fetch successfully'),getData);
+    .json(new Apiresponse(200, 'Product fetch successfully'), getData);
 });
 
 const updateProduct = asyncHandler(async (req, res) => {
@@ -155,7 +171,7 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (!req.user || !req.user._id || req?.user?.role !== 'admin') {
     throw new ApiError('unAuthentcated', 401);
   }
-  
+
   const requiredFields = [
     { key: 'product_name', label: 'Product Name', type: 'string' },
     { key: 'category', label: 'Category', type: 'string' },
@@ -225,7 +241,4 @@ const updateProduct = asyncHandler(async (req, res) => {
   }
 });
 
-
-
-
-export { addProduct, getProduct, deleteProduct, updateProduct ,getProductByid};
+export { addProduct, getProduct, deleteProduct, updateProduct, getProductByid };
