@@ -9,6 +9,7 @@ connectDB()
   .then(() => {
     app.listen(process.env.PORT, () => {
       console.log(`✅ Server is running on port ${process.env.PORT}`);
+      console.log(`✅ Server is running on port ${process.env.CLOUDINARY_CLOUDNAME}`);
       console.log(`🚀 API Base URL: http://localhost:${process.env.PORT}`)
     });
   })
