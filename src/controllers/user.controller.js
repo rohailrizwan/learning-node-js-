@@ -4,6 +4,7 @@ import ApiError from '../utils/apierror.js';
 import Apiresponse from '../utils/apiresponse.js';
 import { asyncHandler } from '../utils/asynchandler.js';
 import { isValidURL, validEmail, validPassword } from '../utils/function.js';
+import sendEmail from '../utils/sendemail.js';
 
 const generateAccessandrefreshtoken = async (userid) => {
   try {
@@ -24,8 +25,8 @@ const generateAccessandrefreshtoken = async (userid) => {
 
 const registerUser = asyncHandler(async (req, res) => {
   // 🧾 1. Data frontend se get karo
-  const { username, email, password, avatar,lname,role } = req.body;
-  console.log(username, email, password, avatar,lname,role);
+  const { username, email, password, avatar, lname, role } = req.body;
+  console.log(username, email, password, avatar, lname, role);
   // ✅ 2. Required fields validation
   const requiredFields = [
     { key: 'username', label: 'Username' },
@@ -77,7 +78,7 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   console.log(newUser);
-  
+
 
   // 🪙 7. Generate Access Token
   const accessToken = newUser.generateAccesstoken();
@@ -118,14 +119,14 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
 const loginUser = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, otp } = req.body;
 
   //  1. Basic validation
   if (!email?.trim()) {
     throw new ApiError('Email is required', 400);
   }
-  if (!password?.trim()) {
-    throw new ApiError(400, 'Password is required', 400);
+  if (!otp?.trim()) {
+    throw new ApiError('Otp is required', 400);
   }
 
   //  2. Check if user exists
@@ -133,18 +134,25 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!existingUser) {
     throw new ApiError('User does not exist', 404);
   }
-
-  //  3. Validate password
-  const isValidPassword = await existingUser.isPasswordcorrect(password);
-  if (!isValidPassword) {
-    throw new ApiError('Invalid password', 401);
+  if (existingUser.otp !== otp || existingUser.otpExpire < Date.now()) {
+    throw new ApiError("Invalid or expired OTP", 401);
   }
+
+  existingUser.otp = undefined;
+  existingUser.otpExpire = undefined;
+  existingUser.isVerified = true;
+  await existingUser.save();
+
 
   //  4. Generate access and refresh token
   const { accessToken, refreshToken } = await generateAccessandrefreshtoken(existingUser._id);
 
   //  5. Remove sensitive fields
-  const safeUser = await User.findById(existingUser._id).select('-password -refreshToken');
+  const safeUser = existingUser.toObject();
+  delete safeUser.password;
+  delete safeUser.refreshToken;
+  delete safeUser.otp;
+  delete safeUser.otpExpire;
 
   // 🍪 6. (Optional) Set cookies — better UX for web apps
   // const cookieOptions = {
@@ -189,31 +197,75 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 // change password
 
-const changePassword = asyncHandler(async (req,res)=>{
-  const {oldpassword,newpassword,confirm_password} = req.body;
+const changePassword = asyncHandler(async (req, res) => {
+  const { oldpassword, newpassword, confirm_password } = req.body;
 
-  if(!(newpassword == confirm_password)){
-      throw new ApiError("Password not match",404)
+  if (!(newpassword == confirm_password)) {
+    throw new ApiError("Password not match", 404)
   }
 
-  const finduser= await User.findById(req.user._id)
+  const finduser = await User.findById(req.user._id)
   const isPasswordcorrect = await finduser.isPasswordcorrect(oldpassword)
 
-  if(!isPasswordcorrect){
-    throw new ApiError("wrong password",400)
+  if (!isPasswordcorrect) {
+    throw new ApiError("wrong password", 400)
   }
   finduser.password = newpassword
 
-  await finduser.save({validateBeforeSave:false})
+  await finduser.save({ validateBeforeSave: false })
 
-  return res.status(200).json(new Apiresponse(200,"password updated successfully"))
+  return res.status(200).json(new Apiresponse(200, "password updated successfully"))
 
+
+})
+
+// sendotp
+
+const sendOtp = asyncHandler(async (req, res) => {
+  const { email, password } = req.body
+  if (!email?.trim()) {
+    throw new ApiError('Email is required', 400);
+  }
+  if (!password?.trim()) {
+    throw new ApiError(400, 'Password is required', 400);
+  }
+
+  //  2. Check if user exists
+  const existingUser = await User.findOne({ email });
+  if (!existingUser) {
+    throw new ApiError('User does not exist', 404);
+  }
+
+  //  3. Validate password
+  const isValidPassword = await existingUser.isPasswordcorrect(password);
+  if (!isValidPassword) {
+    throw new ApiError('Invalid password', 401);
+  }
+
+  try {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    existingUser.otp = otp,
+      existingUser.otpExpire = Date.now() + 5 * 60 * 1000; // 5 minutes
+    await existingUser.save();
+
+    await sendEmail(email, otp);
+    return res
+      .status(201)
+      .json(
+        new Apiresponse(
+          201,
+          'Otp sent successfully',
+        )
+      );
+  } catch (error) {
+    throw new ApiError('Email failed', 500);
+  }
 
 })
 
 
 
-export { registerUser, loginUser, logoutUser,changePassword };
+export { registerUser, loginUser, logoutUser, changePassword, sendOtp };
 
 
 //const user = await user.findOne({

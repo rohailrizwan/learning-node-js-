@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
     },
     lname: {
       type: String,
-      required:false
+      required: false
       //   index:true // for searching
     },
     email: {
@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true,'Password is required'],
+      required: [true, 'Password is required'],
     },
     avatar: {
       type: String, // cliudinary url
@@ -35,6 +35,12 @@ const userSchema = new mongoose.Schema(
       enum: ['admin', 'user'],
       default: 'user',
     },
+
+    // otp
+    isVerified: { type: Boolean, default: false },
+
+    otp: String,
+    otpExpire: Date,
   },
   { timestamps: true },
 );
@@ -48,19 +54,19 @@ userSchema.pre("save", async function (next) {
 
 
 // for checking password correct
-userSchema.methods.isPasswordcorrect = async function(password){
-    return await bcrypt.compare(password,this.password)
+userSchema.methods.isPasswordcorrect = async function (password) {
+  return await bcrypt.compare(password, this.password)
 }
-userSchema.methods.generateAccesstoken=function (){
-   return jwt.sign({
-        _id : this._id,
-        email:this.email,
-        username:this.username,
-    },
-    process.env.ACCESS_TOKEN_SECRET,{
-        expiresIn:process.env.ACCESS_TOKEN_EXPIRY
-    }
-)
+userSchema.methods.generateAccesstoken = function () {
+  return jwt.sign({
+    _id: this._id,
+    email: this.email,
+    username: this.username,
+  },
+    process.env.ACCESS_TOKEN_SECRET, {
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+  }
+  )
 }
 userSchema.methods.generateRefreshtoken = function () {
   return jwt.sign(
